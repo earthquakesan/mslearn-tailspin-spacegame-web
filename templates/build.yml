@@ -1,5 +1,6 @@
 parameters:
   buildConfiguration: 'Release'
+  publishFeedName: 'Tailspin.SpaceGame.Web.Models'
 
 steps:
 - task: DotNetCoreCLI@2
@@ -45,3 +46,22 @@ steps:
     publishWebProjects: false
     arguments: '--no-build --configuration ${{ parameters.buildConfiguration }} --output $(Build.ArtifactStagingDirectory)/${{ parameters.buildConfiguration }}'
     zipAfterPublish: true
+
+- task: DotNetCoreCLI@2
+  displayName: 'Pack the project - ${{ parameters.buildConfiguration }}'
+  inputs:
+    command: 'pack'
+    projects: '**/*.csproj'
+    arguments: '--no-build --configuration ${{ parameters.buildConfiguration }}'
+    versioningScheme: byPrereleaseNumber
+    majorVersion: '1'
+    minorVersion: '0'
+    patchVersion: '0'
+
+- task: NuGetCommand@2
+  displayName: 'Publish NuGet package'
+  inputs:
+    command: push
+    feedPublish: '$(System.TeamProject)/${{ parameters.publishFeedName }}'
+    allowPackageConflicts: true
+  condition: succeeded()
